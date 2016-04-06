@@ -1,0 +1,273 @@
+/*
+	The LinkStateAlgo class implements the links state routing algorithm for finding least cost path
+	between two selected nodes and also create a forwarding Table for the selected node.
+	LinkStateAlgo class has 4 methods other than main() method
+	1.menu()			: This method displays the menu of the functions to be carried out implementing link state routing algorithm.
+	2.forwardingTable()	: This method Creates a Forwarding table for the selected node by the user.
+	3.leastCostPath()	: This method traces a optimal cost path from the source to destination node.
+	4.connection() 		: This method is the core part, implementing the Dijkstra's Algorithm(it produces a shortest cost path tree from a node to every other node) 
+						  and is called by both methods	forwardingTable() and leastCostPath(). 
+*/
+import java.io.*;
+import java.util.Scanner;
+import java.util.ArrayList;
+public class LinkStateAlgo
+{ 
+	public ArrayList<Integer> M=new ArrayList<Integer>();
+	public static int nodes;
+	public  int[] D;
+	public  static int[][] R;
+	/* the main method reads a file(say file.txt) 
+	containing costs between various nodes into an array and displays menu for the user.
+	*/
+	public static  void main(String args[]) throws Exception
+	{
+		System.out.println("\nEnter the file name with extension(if same directory)else give the path ");
+	//taking a filename through console
+		Scanner s=new Scanner(System.in);
+	//retrieving a file 
+		File f=new File(s.nextLine());
+	//scanning the file to retrieve the number of nodes from a given file(say file.txt)
+		Scanner a=new Scanner(f);
+		while(a.hasNext())
+		{
+            try {
+					a.nextInt(); 
+					nodes++; 
+					try{
+							if(a.nextLine()=="\n")
+							break;
+						}
+						catch(Exception e)
+						{
+							e.printStackTrace();
+						}
+				}
+				catch (Exception e)
+				{		a.next();
+				}              
+                		
+		}		
+		System.out.println("\nNumber of nodes :" + nodes+"\n");
+		Scanner b=new Scanner(f);
+		R=new int[nodes+1][nodes+1];
+		System.out.println("Getting costs between each of the Routers:\n");
+	// reading the file contents of cost between any 2 nodes into  a two dimensional array R[i][j]
+		try
+		{
+			while(b.hasNext())
+			{
+				for(int i=1;i<=nodes;i++)
+				{ 
+					for(int j=1;j<=nodes;j++)
+					{
+						try
+						{
+						R[i][j]=b.nextInt(); // reading integer in the file to R[i][j]
+						System.out.print("R["+i+"]["+j+"]"+":"+R[i][j] +"\t");
+						}
+						catch(Exception ex)
+						{
+							b.next();
+							j--;
+						}
+					}
+					System.out.println("\n");
+				}
+			}	
+		}	
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+		}      
+	//updating the cost to maximum integer value if it is -1 between any two nodes
+		for(int m=1;m<=nodes;m++)
+		{
+			for(int n=1;n<=nodes;n++)
+			{
+				if(R[m][n]==-1)	
+	// if cost between the node m and n is -1 then replace it with the maximum possible integer value
+					R[m][n]=Integer.MAX_VALUE;
+					//System.out.print("R"+"["+m+"]["+n+"]"+":"+R[m][n] +"\t");
+			}
+			//System.out.println("\n");
+		}
+	//calling the method menu() to display for the user	
+		LinkStateAlgo menu=new LinkStateAlgo();
+		int selection=menu.menu();
+		while(selection>=0)
+		{
+	// Based on the selected option by the user calling the respective method.
+			if(selection==1)
+			{
+	// if option selected is '1' calling forwardingTable()
+				LinkStateAlgo fT=new LinkStateAlgo();
+				fT.forwardingTable();
+	// return to menu after creating the forwarding table.
+				selection=fT.menu();
+			}
+			else if(selection==2)
+			{
+	// if option selected is '2' calling leastCostPath()	
+				LinkStateAlgo lP=new LinkStateAlgo();
+				lP.leastCostPath();
+	// return to menu after finding the least cost path.
+				selection=lP.menu();
+			}
+		}	
+			System.out.println(" \nExiting... Have a good day xD ");
+	}
+	/*	the menu() displays options to choose from,
+		1. creating a Forwarding Table for a selected node and 
+		2.finding least cost path between any 2 selected nodes
+	*/
+	public int menu()
+		{
+			System.out.println("\n\n\nCHOOSE ONE OF THE BELOW OPTIONS\n");
+			System.out.println("1. Forwarding Table\n2. Least cost path between any two nodes");
+			System.out.println("\nEnter(-1 to EXIT) :");
+			Scanner input=new Scanner(System.in);
+			int selection=input.nextInt();
+			while(selection==0||selection>2){
+				System.out.println("\nCHOOSE EITHER 1 or 2 :P ");
+				System.out.println("\nEnter again(-1 to EXIT)");
+				selection=input.nextInt();
+			}
+			return selection;
+		}
+	//forwardingTable() constructs  and displays a forwarding Table for any of the selected node.
+	public void forwardingTable()
+	{
+		Scanner keyboard=new Scanner(System.in);
+		System.out.println("\nEnter the node to obtain the forwarding Table");
+		int node=keyboard.nextInt();
+		while(node==0|| node>nodes)
+		{	
+			System.out.print("\nENTER VALID NODE PLEASE\n");
+			System.out.println("\nEnter the node to obtain the forwarding Table");
+			node=keyboard.nextInt();
+		}
+		int[] pred;
+		pred=connection(node);  // calling connection() that computes the dijkstra's algorithm.
+		System.out.println("\n\t\tFORWARDING TABLE FOR THE NODE '"+node+"' :\n");
+		System.out.println("-----------------------------------------------------------------");
+		System.out.println("|   \tdestination node        |      \t    Initial Hop\t        |");
+		System.out.println("-----------------------------------------------------------------");
+	//getting the next hop node for selected node
+		for(int r=1;r<=nodes;r++)
+		{
+			int t=r;
+			while(node!=t)
+			{
+				if(pred[t]==node)
+				break;
+				t=pred[t];
+			}
+			if(t==node)
+			{
+				System.out.println("|\t\t"+r+ "\t\t|\t\t -\t\t|");
+			}
+			else
+			{
+				System.out.println("|\t\t"+r+ "\t\t|\t\tR_"+t +"\t\t|");
+			}
+		}
+		System.out.println("-----------------------------------------------------------------\n");
+	}
+	
+	//leastCostPath() produces a shortest cost path from source node to destination node.
+	public void leastCostPath()
+	{
+		Scanner keyboard=new Scanner(System.in);
+		System.out.println("\nEnter the source node :");
+		int sourcenode=keyboard.nextInt();
+		while(sourcenode==0|| sourcenode>nodes)
+		{	
+			System.out.print("\nENTER VALID NODE PLEASE\n");
+			System.out.println("\nEnter the source node :");
+			sourcenode=keyboard.nextInt();
+		}
+		
+		int[] pred;
+	// calling connection() that computes the dijkstra's algorithm.
+		pred=connection(sourcenode);
+		System.out.println("\nEnter the destination node :");	
+		int destination=keyboard.nextInt();
+		while(destination==0 || destination>nodes)
+		{	
+			System.out.print("\nENTER VALID NODE PLEASE\n");
+			System.out.println("\nEnter the destination node :");	
+			destination=keyboard.nextInt();
+		}
+		int k=destination;
+	// tracing back the least cost path from destination to the source node through predecessor[] array returned by connection().
+		while(k!=sourcenode && k<=nodes)
+		{	
+			if(k==destination)
+			{
+				System.out.println("\n\nThe least cost path between the source  '"+ sourcenode+ "'  and destination '"+destination+"' is \n");
+				System.out.print(k);
+			}
+			System.out.print("<---");
+			System.out.print(pred[k]);
+			k=pred[k];
+		}
+		System.out.println("  with COST: "+ D[destination]+"\n");	
+	}	
+	//Connection() takes an integer value node as an argument for which it computes the dijkstra's algorithm constructing
+	// a shortest cost path tree from the given node to every other node.
+	public int[] connection(int rnode)
+	{	
+		int temp=0;
+		int predecessor[]=new int[nodes+1]; 
+		int[] flag=new int[nodes+1]; // flag array is used to mark a node as 'visited' once its least cost path is computed and added to Arraylist M.
+		M.add(rnode); // initially the selected node(source node) is added to 'M' .
+		D=new int[nodes+1]; // cost matrix, that will have the minimum costs from the selected node(source node) at the end of Dijkstra's algorithm
+		for(int j=1;j<=nodes;j++)
+		{	
+	// initialising flag[j]=0 i.e, marking each node as unvisited and for which least cost path is to be computed.	
+			flag[j]=0;
+		}
+		temp=rnode;	
+		for( int r=1;r<=nodes;r++)
+		{
+	//adding costs from selected node(source node) to the cost matrix. 	
+			D[r]=R[temp][r];
+		}
+		flag[rnode]=1; // marking the selected node(source node) as 'visited' .
+		while(M.size()<nodes)
+		{
+			int min=Integer.MAX_VALUE;
+			for(int k=1;k<=nodes;k++)
+			{
+				if( flag[k]!=1 && min > D[k])	
+				{
+					min=D[k];
+					temp=k; 
+				}
+			}
+			M.add(temp);
+			flag[temp]=1;
+			for(int k=1;k<=nodes;k++)
+			{
+				if(flag[k]!=1) // node k that hasn't been visited yet 
+				{
+					if(min+R[temp][k]<D[k] && R[temp][k]!=Integer.MAX_VALUE) 
+					{
+						D[k]=min+R[temp][k]; // shortest path from selected node(source node) to k has been found.
+						predecessor[k]=temp; // predecessor to node k in the optimal path. 
+					}
+				}
+			}
+		}
+		System.out.print("\n");
+		for( int r=1;r<=nodes;r++)
+		{
+			//System.out.println("D["+r+"]----->" +D[r]);
+			if(predecessor[r]==0 &&r!=rnode)
+				predecessor[r]=rnode; // predecessor of nodes which are at next hop from the selected node(source node)
+			//System.out.println("predecessor of "+r +" is : "+predecessor[r]);
+		}
+		return predecessor;
+	}
+}	
